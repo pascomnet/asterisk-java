@@ -1,28 +1,31 @@
 <atlassian-ide-plugin>
-  <project-configuration>
-    <servers>
-      <jira>
-        <server-id>e88a6130-6bd2-45dd-aa5d-57b845f76d0f</server-id>
+  <project-configuration id="1">
+    <servers id="2">
+      <jira id="3">
+        <server-id id="4">e88a6130-6bd2-45dd-aa5d-57b845f76d0f</server-id>
         <name>reucon</name>
         <url>https://secure.reucon.net/issues</url>
         <shared>false</shared>
+        <useSessionCookies>false</useSessionCookies>
       </jira>
-      <bamboo>
-        <server-id>68a20e42-e943-4a1d-b807-45cad35b4f73</server-id>
+      <bamboo id="5">
+        <server-id id="6">68a20e42-e943-4a1d-b807-45cad35b4f73</server-id>
         <name>reucon</name>
         <url>https://secure.reucon.net/build</url>
         <shared>false</shared>
         <use-favourites>false</use-favourites>
+        <show-branches>false</show-branches>
+        <my-branches-only>false</my-branches-only>
         <bamboo2>false</bamboo2>
-        <plans>
-          <plan key="AJ-DEF" grouped="0" />
-          <plan key="AJ-NIGHTLY" grouped="0" />
+        <plans id="7">
+          <plan id="8" key="AJ-DEF" grouped="0" />
+          <plan id="9" key="AJ-NIGHTLY" grouped="0" />
         </plans>
       </bamboo>
     </servers>
-    <default-crucible-server>89c4100c-3c20-4d7d-8611-0dbe1bee742e</default-crucible-server>
+    <default-crucible-server id="10">89c4100c-3c20-4d7d-8611-0dbe1bee742e</default-crucible-server>
     <default-crucible-repo>repos</default-crucible-repo>
     <fisheye-project-path>asterisk-java/trunk</fisheye-project-path>
-    <default-jira-server>e88a6130-6bd2-45dd-aa5d-57b845f76d0f</default-jira-server>
+    <default-jira-server id="11">e88a6130-6bd2-45dd-aa5d-57b845f76d0f</default-jira-server>
   </project-configuration>
 </atlassian-ide-plugin>

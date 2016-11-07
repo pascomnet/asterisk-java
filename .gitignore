@@ -11,3 +11,4 @@ classes
 /bin
 build/
 /.settings/
+atlassian-ide-plugin.xml
