@@ -3,8 +3,10 @@ package org.asteriskjava.pbx.internal.activity;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.log4j.Logger;
 import org.asteriskjava.pbx.ActivityCallback;
 import org.asteriskjava.pbx.AsteriskSettings;
 import org.asteriskjava.pbx.Call;
@@ -18,8 +20,11 @@ import org.asteriskjava.pbx.activities.SplitActivity;
 import org.asteriskjava.pbx.agi.AgiChannelActivityHold;
 import org.asteriskjava.pbx.asterisk.wrap.actions.RedirectAction;
 import org.asteriskjava.pbx.asterisk.wrap.events.ManagerEvent;
+import org.asteriskjava.pbx.asterisk.wrap.events.RenameEvent;
 import org.asteriskjava.pbx.internal.core.AsteriskPBX;
 import org.asteriskjava.pbx.internal.core.ChannelProxy;
+import org.asteriskjava.util.Log;
+import org.asteriskjava.util.LogFactory;
 
 /**
  * The SplitActivity is used by the AsteriksPBX to split a call and place the
@@ -31,7 +36,7 @@ import org.asteriskjava.pbx.internal.core.ChannelProxy;
  */
 public class SplitActivityImpl extends ActivityHelper<SplitActivity> implements SplitActivity
 {
-    static Logger logger = Logger.getLogger(SplitActivityImpl.class);
+    private static final Log logger = LogFactory.getLog(SplitActivityImpl.class);
 
     private Call _callToSplit;
 
@@ -45,36 +50,38 @@ public class SplitActivityImpl extends ActivityHelper<SplitActivity> implements 
 
     /**
      * Splits a call by moving each of its two channels into the Activity agi.
-     * The channels will sit in the agi (with no audio) until something is done with them.
-     * As such you should leave them split for too long.
-     * 
+     * The channels will sit in the agi (with no audio) until something is done
+     * with them. As such you should leave them split for too long.
      * 
      * @param callToSplit The call to split
      * @param listener
      */
     public SplitActivityImpl(final Call callToSplit, final ActivityCallback<SplitActivity> listener)
     {
-        super("SplitActivity", listener); //$NON-NLS-1$
+        super("SplitActivity", listener);
 
+        renameEventReceived.set(new CountDownLatch(1));
         this._callToSplit = callToSplit;
 
-        channel1 = callToSplit.getChannels().get(0);
-        channel2 = callToSplit.getChannels().get(1);
-
-        callToSplit.getChannels();
-
+        List<Channel> tmp = callToSplit.getChannels();
+        if (tmp.size() > 1)
+        {
+            channel1 = tmp.get(0);
+            channel2 = tmp.get(1);
+        }
         this.startActivity(true);
+
     }
 
     @Override
     public boolean doActivity() throws PBXException
     {
 
-        SplitActivityImpl.logger.info("*******************************************************************************"); //$NON-NLS-1$
-        SplitActivityImpl.logger.info("***********                    begin split               ****************"); //$NON-NLS-1$
-        SplitActivityImpl.logger.info("***********            " + this.channel1 + "                 ****************"); //$NON-NLS-1$ //$NON-NLS-2$
-        SplitActivityImpl.logger.info("***********            " + this.channel2 + "                 ****************"); //$NON-NLS-1$ //$NON-NLS-2$
-        SplitActivityImpl.logger.info("*******************************************************************************"); //$NON-NLS-1$
+        SplitActivityImpl.logger.debug("*******************************************************************************");
+        SplitActivityImpl.logger.info("***********                    begin split               ****************");
+        SplitActivityImpl.logger.info("***********            " + this.channel1 + "                 ****************");
+        SplitActivityImpl.logger.debug("***********            " + this.channel2 + "                 ****************");
+        SplitActivityImpl.logger.debug("*******************************************************************************");
 
         // Splits the originating and secondary channels by moving each of them
         // into the associated
@@ -100,14 +107,23 @@ public class SplitActivityImpl extends ActivityHelper<SplitActivity> implements 
     {
         HashSet<Class< ? extends ManagerEvent>> required = new HashSet<>();
 
-        // No events required.
+        required.add(RenameEvent.class);
         return required;
     }
+
+    final AtomicReference<CountDownLatch> renameEventReceived = new AtomicReference<>();
 
     @Override
     synchronized public void onManagerEvent(final ManagerEvent event)
     {
-        // NOOP
+        if (event instanceof RenameEvent)
+        {
+            RenameEvent rename = (RenameEvent) event;
+            if (rename.getChannel().isSame(channel1) || rename.getChannel().isSame(channel2))
+            {
+                renameEventReceived.get().countDown();
+            }
+        }
     }
 
     @Override
@@ -159,8 +175,7 @@ public class SplitActivityImpl extends ActivityHelper<SplitActivity> implements 
 
         if (channel1 == channel2)
         {
-            throw new NullPointerException(
-                    "channel1 is the same as channel2. if I let this happen, asterisk will core dump :)");
+            throw new PBXException("channel1 is the same as channel2. if I let this happen, asterisk will core dump :)");
         }
 
         List<Channel> channels = new LinkedList<>();
@@ -205,8 +220,32 @@ public class SplitActivityImpl extends ActivityHelper<SplitActivity> implements 
             try
             {
 
+                renameEventReceived.set(new CountDownLatch(1));
+
                 // final ManagerResponse response =
                 pbx.sendAction(redirect, 1000);
+
+                // wait for channels to unbridge
+                if (!renameEventReceived.get().await(2000, TimeUnit.MILLISECONDS))
+                {
+                    logger.error("There was no rename event");
+                }
+                else
+                {
+                    logger.warn("Channels are renaming, now waiting for Quiescent");
+                }
+
+                channels.clear();
+
+                channels.add(channel1);
+                channels.add(channel2);
+                if (!pbx.waitForChannelsToQuiescent(channels, 3000))
+                {
+                    logger.error(callSite, callSite);
+                    throw new PBXException("Channel: " + channel1 + " or " + channel2
+                            + " cannot be split as they are still in transition.");
+                }
+
                 double ctr = 0;
                 while ((!agi1.hasCallReachedAgi() || !agi2.hasCallReachedAgi()) && ctr < 10)
                 {
@@ -214,11 +253,11 @@ public class SplitActivityImpl extends ActivityHelper<SplitActivity> implements 
                     ctr += 100.0 / 1000.0;
                     if (!agi1.hasCallReachedAgi())
                     {
-                        logger.error("Waiting on (agi1) " + channel1);
+                        logger.info("Waiting on (agi1) " + channel1);
                     }
                     if (!agi2.hasCallReachedAgi())
                     {
-                        logger.error("Waiting on (agi2) " + channel2);
+                        logger.info("Waiting on (agi2) " + channel2);
                     }
                 }
                 ret = agi1.hasCallReachedAgi() && agi2.hasCallReachedAgi();

@@ -3,7 +3,6 @@ package org.asteriskjava.pbx.internal.activity;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
 import org.asteriskjava.pbx.Activity;
 import org.asteriskjava.pbx.ActivityCallback;
 import org.asteriskjava.pbx.ActivityStatusEnum;
@@ -16,10 +15,12 @@ import org.asteriskjava.pbx.asterisk.wrap.events.ManagerEvent;
 import org.asteriskjava.pbx.asterisk.wrap.response.ManagerResponse;
 import org.asteriskjava.pbx.internal.core.AsteriskPBX;
 import org.asteriskjava.pbx.internal.managerAPI.EventListenerBaseClass;
+import org.asteriskjava.util.Log;
+import org.asteriskjava.util.LogFactory;
 
 public abstract class ActivityHelper<T extends Activity> implements Runnable, Activity
 {
-    static private Logger logger = Logger.getLogger(ActivityHelper.class);
+    private static final Log logger = LogFactory.getLog(ActivityHelper.class);
 
     /**
      * If the activity fails due to an exception then lastException will contain
@@ -61,7 +62,7 @@ public abstract class ActivityHelper<T extends Activity> implements Runnable, Ac
                 }
             };
         }
-        EventListenerBaseClass listener = new EventListenerBaseClass(activityName)
+        EventListenerBaseClass listener = new EventListenerBaseClass(activityName, PBXFactory.getActivePBX())
         {
 
             @Override
@@ -83,7 +84,7 @@ public abstract class ActivityHelper<T extends Activity> implements Runnable, Ac
                 return ActivityHelper.this.getPriority();
             }
         };
-        listener.startListener(PBXFactory.getActivePBX());
+        listener.startListener();
         return listener;
 
     }
@@ -153,7 +154,7 @@ public abstract class ActivityHelper<T extends Activity> implements Runnable, Ac
     {
 
         boolean ret = false;
-        final SetVarAction var = new SetVarAction(channel, "testState", "1"); //$NON-NLS-1$ //$NON-NLS-2$
+        final SetVarAction var = new SetVarAction(channel, "testState", "1");
 
         ManagerResponse response = null;
         try
@@ -164,9 +165,9 @@ public abstract class ActivityHelper<T extends Activity> implements Runnable, Ac
         catch (final Exception e)
         {
             ActivityHelper.logger.debug(e, e);
-            ActivityHelper.logger.error("getVariable: " + e); //$NON-NLS-1$
+            ActivityHelper.logger.error("getVariable: " + e);
         }
-        if ((response != null) && (response.getAttribute("Response").compareToIgnoreCase("success") == 0)) //$NON-NLS-1$ //$NON-NLS-2$
+        if ((response != null) && (response.getAttribute("Response").compareToIgnoreCase("success") == 0))
         {
             ret = true;
         }

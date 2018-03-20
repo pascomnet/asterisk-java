@@ -50,13 +50,12 @@ public class DialLocalToAgiActivity extends EventListenerBaseClass implements Ru
     public DialLocalToAgiActivity(EndPoint from, CallerID fromCallerID, ActivityCallback<DialLocalToAgiActivity> callback,
             Map<String, String> channelVarsToSet)
     {
-        super("Dial " + from + " to AGI");
+        super("Dial " + from + " to AGI", PBXFactory.getActivePBX());
         this.from = from;
         this.fromCallerID = fromCallerID;
         this.callback = callback;
         this.channelVarsToSet = channelVarsToSet;
 
-        this.startListener(PBXFactory.getActivePBX());
         thread = new Thread(this, "Dial " + from + " to AGI");
         thread.start();
     }
@@ -65,10 +64,10 @@ public class DialLocalToAgiActivity extends EventListenerBaseClass implements Ru
     @Override
     public void run()
     {
-        logger.info("*******************************************************************************");
+        logger.debug("*******************************************************************************");
         logger.info("***********                    begin dial local to AGI                  ****************");
-        logger.info("***********                         " + "                              ****************");
-        logger.info("*******************************************************************************");
+        logger.debug("***********                                                      ****************");
+        logger.debug("*******************************************************************************");
         final AsteriskSettings settings = PBXFactory.getActiveProfile();
 
         AsteriskPBX pbx = (AsteriskPBX) PBXFactory.getActivePBX();
@@ -94,28 +93,27 @@ public class DialLocalToAgiActivity extends EventListenerBaseClass implements Ru
 
         try
         {
+            this.startListener();
+
             pbx.sendAction(originate, 30000);
             latch.await(30, TimeUnit.SECONDS);
             callback.progress(this, ActivityStatusEnum.SUCCESS, ActivityStatusEnum.SUCCESS.getDefaultMessage());
 
         }
-        catch (IllegalArgumentException | IllegalStateException | IOException | TimeoutException e)
+        catch (Exception e)
         {
-            // TODO Auto-generated catch block
             logger.error(e, e);
         }
-        catch (InterruptedException e)
+        finally
         {
-            // TODO Auto-generated catch block
-            logger.error(e, e);
+            this.close();
         }
 
     }
 
     public void abort(final String reason)
     {
-        logger.debug("Aborting originate ");//$NON-NLS-1$
-        this.close();
+        logger.warn("Aborting originate ");
 
         for (Channel channel : channels)
         {
@@ -137,10 +135,6 @@ public class DialLocalToAgiActivity extends EventListenerBaseClass implements Ru
     @Override
     synchronized public void onManagerEvent(final ManagerEvent event)
     {
-        if (event instanceof HangupEvent)
-        {
-            this.close();
-        }
         if (event instanceof NewChannelEvent)
         {
             final NewChannelEvent newState = (NewChannelEvent) event;
@@ -186,12 +180,10 @@ public class DialLocalToAgiActivity extends EventListenerBaseClass implements Ru
             }
             catch (IllegalArgumentException | IllegalStateException | IOException | TimeoutException e)
             {
-                // TODO Auto-generated catch block
                 logger.error(e, e);
             }
             catch (InterruptedException e)
             {
-                // TODO Auto-generated catch block
                 logger.error(e, e);
             }
 

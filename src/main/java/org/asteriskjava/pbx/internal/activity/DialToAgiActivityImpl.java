@@ -3,7 +3,6 @@ package org.asteriskjava.pbx.internal.activity;
 import java.util.HashSet;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.asteriskjava.pbx.ActivityCallback;
 import org.asteriskjava.pbx.AgiChannelActivityAction;
 import org.asteriskjava.pbx.CallerID;
@@ -21,10 +20,12 @@ import org.asteriskjava.pbx.asterisk.wrap.response.ManagerResponse;
 import org.asteriskjava.pbx.internal.core.AsteriskPBX;
 import org.asteriskjava.pbx.internal.managerAPI.DialToAgi;
 import org.asteriskjava.pbx.internal.managerAPI.OriginateResult;
+import org.asteriskjava.util.Log;
+import org.asteriskjava.util.LogFactory;
 
 public class DialToAgiActivityImpl extends ActivityHelper<DialToAgiActivity> implements DialToAgiActivity, NewChannelListener
 {
-    static Logger logger = Logger.getLogger(DialToAgiActivityImpl.class);
+    private static final Log logger = LogFactory.getLog(DialToAgiActivityImpl.class);
 
     private final boolean hideToCallerId;
 
@@ -43,12 +44,16 @@ public class DialToAgiActivityImpl extends ActivityHelper<DialToAgiActivity> imp
 
     private AgiChannelActivityAction action;
 
-    public DialToAgiActivityImpl(final EndPoint originating, final CallerID toCallerID, final boolean hideToCallerID,
-            final ActivityCallback<DialToAgiActivity> listener, Map<String, String> channelVarsToSet,
-            AgiChannelActivityAction action)
-    {
-        super("Dial", listener); //$NON-NLS-1$
+    private DialToAgi originator;
 
+    private Integer timeout;
+
+    public DialToAgiActivityImpl(final EndPoint originating, final CallerID toCallerID, Integer timeout,
+            final boolean hideToCallerID, final ActivityCallback<DialToAgiActivity> listener,
+            Map<String, String> channelVarsToSet, AgiChannelActivityAction action)
+    {
+        super("Dial", listener);
+        this.timeout = timeout;
         this.action = action;
         this._originating = originating;
         this.toCallerID = toCallerID;
@@ -56,6 +61,10 @@ public class DialToAgiActivityImpl extends ActivityHelper<DialToAgiActivity> imp
         this.cancelledByOperator = false;
         this.channelVarsToSet = channelVarsToSet;
 
+    }
+
+    public void dial()
+    {
         this.startActivity(false);
     }
 
@@ -66,13 +75,14 @@ public class DialToAgiActivityImpl extends ActivityHelper<DialToAgiActivity> imp
 
         try (DialToAgi nr = new DialToAgi(this.toCallerID.toString()))
         {
-            DialToAgiActivityImpl.logger.info("**************************************************************************");
-            DialToAgiActivityImpl.logger.info("***********                    begin dial out                  ***********");
-            DialToAgiActivityImpl.logger.info("***********                to agi              ***********");
-            DialToAgiActivityImpl.logger.info("**************************************************************************");
+            DialToAgiActivityImpl.logger.debug("**************************************************************************");
+            DialToAgiActivityImpl.logger.info("***********                begin dial out to agi               ***********");
+            DialToAgiActivityImpl.logger.debug("**************************************************************************");
+
+            originator = nr;
 
             final OriginateResult[] resultChannels = nr.dial(this, this._originating, this.action, this.toCallerID,
-                    this.hideToCallerId, channelVarsToSet);
+                    this.timeout, this.hideToCallerId, channelVarsToSet);
 
             if (resultChannels[0] == null || !resultChannels[0].isSuccess())
             {
@@ -83,7 +93,7 @@ public class DialToAgiActivityImpl extends ActivityHelper<DialToAgiActivity> imp
                 if (!this.cancelledByOperator)
                 {
                     this.setLastException(new PBXException(("OperatorEndedCall")));
-                    logger.error("dialout to  failed.");
+                    logger.warn("dialout to  failed.");
                 }
             }
             else
@@ -101,8 +111,7 @@ public class DialToAgiActivityImpl extends ActivityHelper<DialToAgiActivity> imp
         }
         catch (InterruptedException e)
         {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            logger.error(e);
         }
         finally
         {
@@ -122,6 +131,7 @@ public class DialToAgiActivityImpl extends ActivityHelper<DialToAgiActivity> imp
 
             if (this.originatingChannel != null)
             {
+                logger.warn("Hanging up");
                 pbx.hangup(this.originatingChannel);
             }
         }
@@ -162,7 +172,7 @@ public class DialToAgiActivityImpl extends ActivityHelper<DialToAgiActivity> imp
             this.originatingChannel = channel;
         }
 
-        super.progess(this, "Channel for " + channel.getEndPoint().getSIPSimpleName() + " is now up."); //$NON-NLS-1$ //$NON-NLS-2$
+        super.progess(this, "Channel for " + channel.getEndPoint().getSIPSimpleName() + " is now up.");
 
     }
 
@@ -175,7 +185,7 @@ public class DialToAgiActivityImpl extends ActivityHelper<DialToAgiActivity> imp
     {
 
         boolean ret = false;
-        final SetVarAction var = new SetVarAction(channel, "testState", "1"); //$NON-NLS-1$ //$NON-NLS-2$
+        final SetVarAction var = new SetVarAction(channel, "testState", "1");
 
         ManagerResponse response = null;
         try
@@ -186,9 +196,9 @@ public class DialToAgiActivityImpl extends ActivityHelper<DialToAgiActivity> imp
         catch (final Exception e)
         {
             DialToAgiActivityImpl.logger.debug(e, e);
-            DialToAgiActivityImpl.logger.error("getVariable: " + e); //$NON-NLS-1$
+            DialToAgiActivityImpl.logger.error("getVariable: " + e);
         }
-        if ((response != null) && (response.getAttribute("Response").compareToIgnoreCase("success") == 0)) //$NON-NLS-1$ //$NON-NLS-2$
+        if ((response != null) && (response.getAttribute("Response").compareToIgnoreCase("success") == 0))
         {
             ret = true;
         }
@@ -221,6 +231,11 @@ public class DialToAgiActivityImpl extends ActivityHelper<DialToAgiActivity> imp
     public void onManagerEvent(ManagerEvent event)
     {
         // NOOP
+    }
+
+    public void abort()
+    {
+        originator.abort();
     }
 
 }

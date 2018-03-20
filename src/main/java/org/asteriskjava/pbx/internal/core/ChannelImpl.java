@@ -3,7 +3,6 @@ package org.asteriskjava.pbx.internal.core;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
 import org.asteriskjava.pbx.AgiChannelActivityAction;
 import org.asteriskjava.pbx.AsteriskSettings;
 import org.asteriskjava.pbx.CallerID;
@@ -15,6 +14,8 @@ import org.asteriskjava.pbx.InvalidChannelName;
 import org.asteriskjava.pbx.PBX;
 import org.asteriskjava.pbx.PBXFactory;
 import org.asteriskjava.pbx.TechType;
+import org.asteriskjava.util.Log;
+import org.asteriskjava.util.LogFactory;
 
 /**
  * TODO set the channel unique id when registering against an existing channel
@@ -43,7 +44,7 @@ public class ChannelImpl implements Channel
 
     public static final String UNKNOWN_UNIQUE_ID = "-1"; //$NON-NLS-1$
 
-    private static Logger logger = Logger.getLogger(ChannelImpl.class);
+    private static final Log logger = LogFactory.getLog(ChannelImpl.class);
     private static int logCounter = 100;
 
     /**
@@ -58,7 +59,7 @@ public class ChannelImpl implements Channel
      * a channel can be 're-created' on the fly. In this case the channels name
      * will be the same but the unique id will change.
      */
-    final private String _uniqueID;
+    private String _uniqueID;
     /**
      * This is an abbreviated form of the channel name obtained by removing
      * everything after the '-' in the channel name.
@@ -81,7 +82,7 @@ public class ChannelImpl implements Channel
 
     private boolean _parked = false;
 
-    private boolean _isZombie = false;
+    private volatile boolean _isZombie = false;
 
     /**
      * A channel is live if it has not been hungup.
@@ -93,14 +94,14 @@ public class ChannelImpl implements Channel
      * Masqueraded channels have an extra suffix <MASQ> after the sequence
      * number e.g. SIP/100-000009823<MASQ>
      */
-    private boolean _isMasqueraded = false;
+    private volatile boolean _isMasqueraded = false;
 
     /**
      * Indicates that the channel is undergoing an action such as being parked.
      * Action channels have an extra prefix before the tech e.g.
      * Parked/SIP/100-000009823
      */
-    private boolean _isInAction = false;
+    private volatile boolean _isInAction = false;
 
     /**
      * Indicates that the channel has been originated directly from the Asterisk
@@ -177,7 +178,7 @@ public class ChannelImpl implements Channel
 
         if (uniqueID.compareToIgnoreCase("-1") == 0)
         {
-            logger.info("uniqueID is -1");
+            logger.debug("uniqueID is -1");
         }
 
         this._uniqueID = uniqueID;
@@ -227,7 +228,7 @@ public class ChannelImpl implements Channel
 
     private void setChannelName(final String channelName) throws InvalidChannelName
     {
-        logger.info("Renamed channel from " + this._channelName + " to " + channelName);
+        logger.debug("Renamed channel from " + this._channelName + " to " + channelName);
         this._channelName = this.cleanChannelName(channelName);
         this.validateChannelName(this._channelName);
 
@@ -254,13 +255,6 @@ public class ChannelImpl implements Channel
                 ChannelImpl.logCounter--;
             }
         }
-    }
-
-    @Override
-    public void rename(final String newName) throws InvalidChannelName
-    {
-        this.setChannelName(newName);
-
     }
 
     /**
@@ -354,7 +348,7 @@ public class ChannelImpl implements Channel
         }
         if (wasInAction != this._isInAction)
         {
-            logger.info("Channel " + this + " : inaction status changed from " + wasInAction + " to " + this._isInAction);
+            logger.debug("Channel " + this + " : inaction status changed from " + wasInAction + " to " + this._isInAction);
         }
 
         // Channels can be marked as in a zombie state
@@ -382,6 +376,30 @@ public class ChannelImpl implements Channel
         }
 
         return cleanedName;
+    }
+
+    @Override
+    public void rename(final String newName, String uniqueId) throws InvalidChannelName
+    {
+
+        String oldChannelName = getChannelName();
+        logger.info("Changing " + oldChannelName + " to " + newName + " on " + oldChannelName + " " + _uniqueID);
+        this.setChannelName(newName);
+
+        if (_uniqueID.equalsIgnoreCase("-1"))
+        {
+            logger.info("Changing " + _uniqueID + " to " + uniqueId + " on " + oldChannelName + " " + _uniqueID);
+            _uniqueID = uniqueId;
+        }
+
+        // the new replacement channel will go through a rename (without
+        // MASQ) and is ready to use.
+
+        // the old channel will go through a rename (MASQ), then anther
+        // rename (ZOMBIE) and finally a hangup
+
+        _isInAction = false;
+
     }
 
     @Override

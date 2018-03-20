@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
 import org.asteriskjava.pbx.ActivityCallback;
 import org.asteriskjava.pbx.Call;
 import org.asteriskjava.pbx.Call.OperandChannel;
@@ -25,6 +24,8 @@ import org.asteriskjava.pbx.asterisk.wrap.events.LinkEvent;
 import org.asteriskjava.pbx.asterisk.wrap.events.ManagerEvent;
 import org.asteriskjava.pbx.asterisk.wrap.events.UnlinkEvent;
 import org.asteriskjava.pbx.internal.core.AsteriskPBX;
+import org.asteriskjava.util.Log;
+import org.asteriskjava.util.LogFactory;
 
 /**
  * The BlindTransferActivity is used by the AsteriksPBX to transfer a live
@@ -34,7 +35,7 @@ import org.asteriskjava.pbx.internal.core.AsteriskPBX;
  */
 public class BlindTransferActivityImpl extends ActivityHelper<BlindTransferActivity> implements BlindTransferActivity
 {
-    static Logger logger = Logger.getLogger(BlindTransferActivityImpl.class);
+    private static final Log logger = LogFactory.getLog(BlindTransferActivityImpl.class);
 
     private Call _call;
 
@@ -78,7 +79,7 @@ public class BlindTransferActivityImpl extends ActivityHelper<BlindTransferActiv
             final CallerID toCallerID, boolean autoAnswer, long timeout,
             final ActivityCallback<BlindTransferActivity> listener)
     {
-        super("BlindTransferActivity", listener); //$NON-NLS-1$
+        super("BlindTransferActivity", listener);
 
         this._call = call;
         this._channelToTransfer = channelToTransfer;
@@ -95,7 +96,7 @@ public class BlindTransferActivityImpl extends ActivityHelper<BlindTransferActiv
     public BlindTransferActivityImpl(Channel agentChannel, EndPoint transferTarget, CallerID toCallerID, boolean autoAnswer,
             int timeout, ActivityCallback<BlindTransferActivity> iCallback) throws PBXException
     {
-        super("BlindTransferActivity", iCallback); //$NON-NLS-1$
+        super("BlindTransferActivity", iCallback);
 
         this._transferTarget = transferTarget;
         this._toCallerID = toCallerID;
@@ -122,14 +123,12 @@ public class BlindTransferActivityImpl extends ActivityHelper<BlindTransferActiv
         try
         {
 
-            logger.info("*******************************************************************************"); //$NON-NLS-1$
-            logger.info("***********                    begin blind transfer            ****************"); //$NON-NLS-1$
-            logger.info("***********            " + this._channelToTransfer //$NON-NLS-1$
-                    + "                              ****************"); //$NON-NLS-1$
-            logger.info("***********            " + this._transferTarget //$NON-NLS-1$
-                    + "                              ****************"); //$NON-NLS-1$
-            logger.info("***********            " + this._toCallerID + "                              ****************"); //$NON-NLS-1$ //$NON-NLS-2$
-            logger.info("*******************************************************************************"); //$NON-NLS-1$
+            logger.debug("*******************************************************************************");
+            logger.info("***********                    begin blind transfer            ****************");
+            logger.info("***********          " + this._channelToTransfer + "                           ****************");
+            logger.debug("***********            " + this._transferTarget + "                            ****************");
+            logger.debug("***********            " + this._toCallerID + "                            ****************");
+            logger.debug("*******************************************************************************");
 
             if (!pbx.moveChannelToAgi(actualChannelToTransfer))
             {
@@ -149,8 +148,8 @@ public class BlindTransferActivityImpl extends ActivityHelper<BlindTransferActiv
             {
                 sipHeader = PBXFactory.getActiveProfile().getAutoAnswer();
             }
-            actualChannelToTransfer.setCurrentActivityAction(
-                    new AgiChannelActivityBlindTransfer(this._transferTarget.getFullyQualifiedName(), sipHeader));
+            actualChannelToTransfer.setCurrentActivityAction(new AgiChannelActivityBlindTransfer(
+                    this._transferTarget.getFullyQualifiedName(), sipHeader, _toCallerID.getNumber()));
 
             // TODO: At one point we were adding the /n option to the end of the
             // channel to get around
@@ -166,6 +165,7 @@ public class BlindTransferActivityImpl extends ActivityHelper<BlindTransferActiv
             }
             else if (_completionCause == CompletionCause.CANCELLED)
             {
+                logger.warn("Cancelled, hanging up dialed channel");
                 pbx.hangup(dialedChannel);
             }
 
@@ -186,7 +186,7 @@ public class BlindTransferActivityImpl extends ActivityHelper<BlindTransferActiv
         }
         catch (final Exception e)
         {
-            logger.error("error occurred in blindtransfer", e); //$NON-NLS-1$
+            logger.error("error occurred in blindtransfer", e);
             this.setLastException(new PBXException(e));
         }
 

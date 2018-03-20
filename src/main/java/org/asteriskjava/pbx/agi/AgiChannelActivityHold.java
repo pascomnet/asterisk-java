@@ -17,6 +17,7 @@ public class AgiChannelActivityHold implements AgiChannelActivityAction
 
     CountDownLatch latch = new CountDownLatch(1);
     volatile boolean callReachedAgi = false;
+    long timer = System.currentTimeMillis();
 
     @Override
     public void execute(AgiChannel channel, Channel ichannel) throws AgiException, InterruptedException
@@ -26,16 +27,33 @@ public class AgiChannelActivityHold implements AgiChannelActivityAction
             callReachedAgi = true;
             channel.answer();
             channel.playMusicOnHold();
-            logger.info(ichannel + " is still on hold");
+            long secondsOnHold = Math.abs(System.currentTimeMillis() - timer) / 1000;
+            if (secondsOnHold > 600)
+            {
+                logger.info(ichannel + " is still on hold after " + secondsOnHold + " seconds");
+            }
             if (latch.await(10, TimeUnit.SECONDS))
             {
                 try
                 {
                     channel.stopMusicOnHold();
                 }
+                catch (AgiHangupException e)
+                {
+                    logger.info("Channel hungup " + channel.getName());
+                }
                 catch (Exception e)
                 {
                     logger.warn(e);
+                }
+            }
+            else
+            {
+                if (channel.getName().startsWith("Local") && secondsOnHold > 3600)
+                {
+                    // cleanup Local channels older than 1 hour
+                    logger.error("Hanging up local channel that has been on hold for 1 hour " + channel.getName());
+                    channel.hangup();
                 }
             }
         }

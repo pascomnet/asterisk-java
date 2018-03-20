@@ -1,20 +1,28 @@
 package org.asteriskjava.pbx.internal.core;
 
+import java.io.IOException;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.Priority;
+import org.asteriskjava.manager.TimeoutException;
 import org.asteriskjava.pbx.Channel;
 import org.asteriskjava.pbx.EndPoint;
 import org.asteriskjava.pbx.InvalidChannelName;
 import org.asteriskjava.pbx.ListenerPriority;
+import org.asteriskjava.pbx.asterisk.wrap.actions.StatusAction;
 import org.asteriskjava.pbx.asterisk.wrap.events.HangupEvent;
 import org.asteriskjava.pbx.asterisk.wrap.events.ManagerEvent;
 import org.asteriskjava.pbx.asterisk.wrap.events.MasqueradeEvent;
+import org.asteriskjava.pbx.asterisk.wrap.events.NewChannelEvent;
 import org.asteriskjava.pbx.asterisk.wrap.events.RenameEvent;
+import org.asteriskjava.pbx.asterisk.wrap.events.ResponseEvent;
+import org.asteriskjava.pbx.asterisk.wrap.events.ResponseEvents;
+import org.asteriskjava.pbx.asterisk.wrap.events.StatusEvent;
+import org.asteriskjava.util.Log;
+import org.asteriskjava.util.LogFactory;
 
 /**
  * The LiveChannelManager keeps a list of all of the live channels present on an
@@ -51,7 +59,7 @@ import org.asteriskjava.pbx.asterisk.wrap.events.RenameEvent;
  */
 public class LiveChannelManager implements FilteredManagerListener<ManagerEvent>
 {
-    private static final Logger logger = Logger.getLogger(LiveChannelManager.class);
+    private static final Log logger = LogFactory.getLog(LiveChannelManager.class);
 
     /**
      * A collection of all of the live proxies in the system. We monitor the
@@ -63,6 +71,36 @@ public class LiveChannelManager implements FilteredManagerListener<ManagerEvent>
     public LiveChannelManager()
     {
         CoherentManagerConnection.getInstance().addListener(this);
+
+    }
+
+    /**
+     * Find all the channels that came into existence before startup. This can't
+     * be done during the Constructor call, because it requires calls back to
+     * AsteriskPBX which isn't finished constructing until after the Constructor
+     * returns.
+     */
+    void performPostCreationTasks()
+    {
+        StatusAction statusAction = new StatusAction();
+        try
+        {
+            ResponseEvents events = CoherentManagerConnection.sendEventGeneratingAction(statusAction, 1000);
+            for (ResponseEvent event : events.getEvents())
+            {
+                if (event instanceof StatusEvent)
+                {
+                    // do nothing. Creating the events will register the
+                    // channels, which is after all what we are trying to do.
+                }
+            }
+
+        }
+        catch (IllegalArgumentException | IllegalStateException | IOException | TimeoutException e)
+        {
+            logger.error(e, e);
+        }
+
     }
 
     public ChannelProxy getChannelByEndPoint(EndPoint endPoint)
@@ -88,9 +126,9 @@ public class LiveChannelManager implements FilteredManagerListener<ManagerEvent>
             if (index == null)
                 this._liveChannels.add(proxy);
         }
-        logger.info("Adding liveChannel " + proxy);
+        logger.debug("Adding liveChannel " + proxy);
 
-        dumpProxies(proxy, "Add"); //$NON-NLS-1$
+        dumpProxies(proxy, "Add");
         sanityCheck();
 
     }
@@ -99,10 +137,10 @@ public class LiveChannelManager implements FilteredManagerListener<ManagerEvent>
     {
         if (logger.isDebugEnabled())
         {
-            logger.debug("Dump of LiveChannels, cause:" + cause + ": " + proxy); //$NON-NLS-1$ //$NON-NLS-2$
+            logger.debug("Dump of LiveChannels, cause:" + cause + ": " + proxy); //$NON-NLS-2$
             for (ChannelProxy aProxy : _liveChannels)
             {
-                logger.debug("ChannelProxy: " + aProxy); //$NON-NLS-1$
+                logger.debug("ChannelProxy: " + aProxy);
             }
         }
     }
@@ -116,14 +154,14 @@ public class LiveChannelManager implements FilteredManagerListener<ManagerEvent>
             logger.info("Removing liveChannel " + proxy);
             this._liveChannels.remove(index);
         }
-        dumpProxies(proxy, "Removing"); //$NON-NLS-1$
+        dumpProxies(proxy, "Removing");
 
     }
 
     public ChannelProxy findChannel(String extendedChannelName, String uniqueID)
     {
         ChannelProxy proxy = null;
-        logger.info("Trying to find channel " + extendedChannelName + " " + uniqueID);
+        logger.debug("Trying to find channel " + extendedChannelName + " " + uniqueID);
 
         String localUniqueId = uniqueID;
         if (localUniqueId == null)
@@ -164,10 +202,10 @@ public class LiveChannelManager implements FilteredManagerListener<ManagerEvent>
 
         if (proxy == null)
         {
-            logger.info("Failed to match channel to any of...");
+            logger.debug("Failed to match channel to any of...");
             for (ChannelProxy aChannel : _liveChannels)
             {
-                logger.info(aChannel);
+                logger.debug(aChannel);
             }
 
         }
@@ -195,6 +233,10 @@ public class LiveChannelManager implements FilteredManagerListener<ManagerEvent>
         required.add(MasqueradeEvent.class);
         required.add(RenameEvent.class);
         required.add(HangupEvent.class);
+
+        // add NewChannelEvent so all channels are added to the
+        // LiveChannelManager
+        required.add(NewChannelEvent.class);
 
         return required;
     }
@@ -250,7 +292,7 @@ public class LiveChannelManager implements FilteredManagerListener<ManagerEvent>
                     // now the active channel
                     // and everyone will be happy.
                     originalProxy.masquerade(cloneProxy);
-                    dumpProxies(cloneProxy, "Masquerade"); //$NON-NLS-1$
+                    dumpProxies(cloneProxy, "Masquerade");
                     sanityCheck();
                 }
                 catch (InvalidChannelName e)
@@ -261,8 +303,8 @@ public class LiveChannelManager implements FilteredManagerListener<ManagerEvent>
 
             }
             else
-                logger.error("Either the clone or original channelProxy was missing during a masquerade: cloneIndex=" //$NON-NLS-1$
-                        + cloneIndex + " originalIndex=" + originalIndex); //$NON-NLS-1$
+                logger.error("Either the clone or original channelProxy was missing during a masquerade: cloneIndex="
+                        + cloneIndex + " originalIndex=" + originalIndex);
 
         }
         if (event instanceof RenameEvent)
@@ -274,8 +316,9 @@ public class LiveChannelManager implements FilteredManagerListener<ManagerEvent>
             {
                 try
                 {
-                    oldChannel.rename(rename.getNewName());
-                    dumpProxies(oldChannel, "RenameEvent"); //$NON-NLS-1$
+                    oldChannel.rename(rename.getNewName(), rename.getUniqueId());
+
+                    dumpProxies(oldChannel, "RenameEvent");
                     sanityCheck();
                 }
                 catch (InvalidChannelName e)
@@ -285,7 +328,9 @@ public class LiveChannelManager implements FilteredManagerListener<ManagerEvent>
             }
             else
             {
-                logger.warn("Unable to rename channel -> Failed to find channel " + rename.getChannel());
+                String message = "Unable to rename channel -> Failed to find channel " + rename.getChannel();
+                logger.warn(message);
+                dumpProxies(null, message);
             }
         }
         else if (event instanceof HangupEvent)
@@ -307,10 +352,12 @@ public class LiveChannelManager implements FilteredManagerListener<ManagerEvent>
                 ChannelProxy proxy = findProxy(hangup.getChannel());
                 if (proxy != null)
                 {
+                    logger.debug("Removing proxy " + proxy);
+
                     this._liveChannels.remove(proxy);
-                    logger.info("Removing liveChannel " + proxy);
+                    logger.debug("Removing liveChannel " + proxy);
                     proxy.getChannel().notifyHangupListeners(hangup.getCause(), hangup.getCauseTxt());
-                    dumpProxies(proxy, "HangupEvent"); //$NON-NLS-1$
+                    dumpProxies(proxy, "HangupEvent");
                 }
 
             }
@@ -324,7 +371,7 @@ public class LiveChannelManager implements FilteredManagerListener<ManagerEvent>
     @Override
     public String getName()
     {
-        return "LiveChannelManager"; //$NON-NLS-1$
+        return "LiveChannelManager";
     }
 
     @Override
@@ -333,11 +380,10 @@ public class LiveChannelManager implements FilteredManagerListener<ManagerEvent>
         return ListenerPriority.CRITICAL;
     }
 
-    @SuppressWarnings("deprecation")
     public void sanityCheck()
     {
 
-        if (logger.isEnabledFor(Priority.INFO))
+        if (logger.isDebugEnabled())
         {
             logger.error("Performing Sanity Check");
             Set<String> channels = new HashSet<>();
@@ -361,6 +407,13 @@ public class LiveChannelManager implements FilteredManagerListener<ManagerEvent>
 
             }
         }
+    }
+
+    public List<ChannelProxy> getChannelList()
+    {
+        List<ChannelProxy> channels = new LinkedList<>();
+        channels.addAll(_liveChannels);
+        return channels;
     }
 
 }

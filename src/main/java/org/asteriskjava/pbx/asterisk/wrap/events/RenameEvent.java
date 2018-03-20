@@ -1,18 +1,18 @@
 package org.asteriskjava.pbx.asterisk.wrap.events;
 
-import org.apache.log4j.Logger;
 import org.asteriskjava.pbx.Channel;
 import org.asteriskjava.pbx.InvalidChannelName;
 import org.asteriskjava.pbx.PBXFactory;
 import org.asteriskjava.pbx.internal.core.AsteriskPBX;
 import org.asteriskjava.pbx.internal.core.ChannelProxy;
+import org.asteriskjava.util.Log;
+import org.asteriskjava.util.LogFactory;
 
 public class RenameEvent extends ManagerEvent implements ChannelEvent
 {
     private static final long serialVersionUID = 1L;
 
-    @SuppressWarnings("unused")
-    private static final Logger logger = Logger.getLogger(RenameEvent.class);
+    private static final Log logger = LogFactory.getLog(RenameEvent.class);
 
     /**
      * The existing channel which is about to be renamed.
@@ -24,6 +24,8 @@ public class RenameEvent extends ManagerEvent implements ChannelEvent
      */
     private final String _newName;
 
+    private String uniqueId;
+
     public RenameEvent(final org.asteriskjava.manager.event.RenameEvent event) throws InvalidChannelName
     {
         super(event);
@@ -32,8 +34,13 @@ public class RenameEvent extends ManagerEvent implements ChannelEvent
         this._channel = pbx.internalRegisterChannel(event.getChannel(), event.getUniqueId());
         this._newName = event.getNewname();
 
-        assert ((ChannelProxy) this._channel).getRealChannel().getUniqueId()
-                .compareToIgnoreCase(event.getUniqueId()) == 0 : "Rename registered against incorrect channel"; //$NON-NLS-1$
+        String uniqueId = ((ChannelProxy) this._channel).getRealChannel().getUniqueId();
+        logger.debug("Renaming :" + uniqueId + " " + event.getUniqueId());
+
+        this.uniqueId = event.getUniqueId();
+
+        assert uniqueId.equalsIgnoreCase("-1")
+                || uniqueId.compareToIgnoreCase(event.getUniqueId()) == 0 : "Rename registered against incorrect channel"; //$NON-NLS-1$
 
     }
 
@@ -46,6 +53,11 @@ public class RenameEvent extends ManagerEvent implements ChannelEvent
     public final String getNewName()
     {
         return this._newName;
+    }
+
+    public final String getUniqueId()
+    {
+        return uniqueId;
     }
 
     @Override

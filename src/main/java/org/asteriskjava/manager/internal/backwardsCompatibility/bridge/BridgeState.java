@@ -1,6 +1,7 @@
 package org.asteriskjava.manager.internal.backwardsCompatibility.bridge;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -16,15 +17,17 @@ import org.asteriskjava.util.LogFactory;
 /**
  * Track the current members of a bridge, emmitting BridgeEvents when 2 members
  * join or breakup
- * 
+ *
  * @author rsutton
  */
 class BridgeState
 {
-    final Log logger = LogFactory.getLog(getClass());
+    private final Log logger = LogFactory.getLog(getClass());
+
+    private static final BridgeEnterEventComparator BRIDGE_ENTER_EVENT_COMPARATOR = new BridgeEnterEventComparator();
 
     private final Map<String, BridgeEnterEvent> members = new HashMap<>();
-    
+
     ManagerEvent destroy()
     {
         synchronized (members) {
@@ -35,7 +38,7 @@ class BridgeState
 
     /**
      * if there are exactly 2 members in the bridge, return a BridgeEvent
-     * 
+     *
      * @param event
      * @return
      */
@@ -70,7 +73,7 @@ class BridgeState
 
     /**
      * If there are exactly 2 members in the bridge, return a BridgeEvent
-     * 
+     *
      * @param event
      * @return
      */
@@ -78,7 +81,7 @@ class BridgeState
     ManagerEvent removeMember(BridgeLeaveEvent event)
     {
         List<BridgeEnterEvent> remaining = null;
-        
+
         synchronized (members)
         {
             if (members.remove(event.getChannel()) != null
@@ -99,9 +102,10 @@ class BridgeState
                 BridgeEvent.BRIDGE_STATE_UNLINK,
                 remaining);
     }
-    
-    private BridgeEvent buildBridgeEvent(String bridgeState, List<BridgeEnterEvent> members)
-    {
+
+    private BridgeEvent buildBridgeEvent(String bridgeState, List<BridgeEnterEvent> members) {
+        Collections.sort(members, BRIDGE_ENTER_EVENT_COMPARATOR);
+
         BridgeEvent bridgeEvent = new BridgeEvent(this);
 
         bridgeEvent.setCallerId1(members.get(0).getCallerIdNum());

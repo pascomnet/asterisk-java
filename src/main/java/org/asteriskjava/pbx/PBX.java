@@ -8,6 +8,7 @@ import org.asteriskjava.pbx.activities.DialActivity;
 import org.asteriskjava.pbx.activities.HoldActivity;
 import org.asteriskjava.pbx.activities.JoinActivity;
 import org.asteriskjava.pbx.activities.ParkActivity;
+import org.asteriskjava.pbx.activities.RedirectToActivity;
 import org.asteriskjava.pbx.activities.SplitActivity;
 
 /**
@@ -22,7 +23,7 @@ public interface PBX
      * Call this method when shutting down the PBX interface to allow it to
      * cleanup.
      */
-    public void shutdown();
+    void shutdown();
 
     /**
      * Returns true if the bridge function is supported.
@@ -131,9 +132,10 @@ public interface PBX
 
     /**
      * Hangup the given call, not returning until the call is hungup.
+     * 
      * @param call
      */
-	public void hangup(Call call) throws PBXException;
+    void hangup(Call call) throws PBXException;
 
     /**
      * Put the given channel on hold.
@@ -205,18 +207,20 @@ public interface PBX
      * has completed.
      */
 
-    public SplitActivity split(final Call callToSplit, final ActivityCallback<SplitActivity> listener) throws PBXException;
+    SplitActivity split(final Call callToSplit, final ActivityCallback<SplitActivity> listener) throws PBXException;
 
-    public void split(final Call callToSplit) throws PBXException;
+    RedirectToActivity redirectToActivity(final Channel channel, final ActivityCallback<RedirectToActivity> listener);
+
+    void split(final Call callToSplit) throws PBXException;
 
     /**
      * Joins two calls not returning until the join completes. Each call must
      * only have one active channel
      */
-    public JoinActivity join(Call lhs, OperandChannel originatingOperand, Call rhs, OperandChannel acceptingOperand,
+    JoinActivity join(Call lhs, OperandChannel originatingOperand, Call rhs, OperandChannel acceptingOperand,
             CallDirection direction);
 
-    public void join(Call lhs, OperandChannel originatingOperand, Call rhs, OperandChannel acceptingOperand,
+    void join(Call lhs, OperandChannel originatingOperand, Call rhs, OperandChannel acceptingOperand,
             CallDirection direction, ActivityCallback<JoinActivity> listener);
 
     /**
@@ -272,9 +276,10 @@ public interface PBX
 
     EndPoint getExtensionAgi();
 
-    public boolean waitForChannelToQuiescent(Channel channel, int timeout);
+    boolean waitForChannelToQuiescent(Channel channel, int timeout);
 
-    public Trunk buildTrunk(String string);
+    Trunk buildTrunk(String string);
 
+    void performPostCreationTasks();
 
 }

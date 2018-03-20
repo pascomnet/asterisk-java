@@ -11,4 +11,5 @@ classes
 /bin
 build/
 /.settings/
+/.metadata/
 atlassian-ide-plugin.xml

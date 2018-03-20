@@ -7,7 +7,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.log4j.Logger;
 import org.asteriskjava.pbx.AgiChannelActivityAction;
 import org.asteriskjava.pbx.CallerID;
 import org.asteriskjava.pbx.Channel;
@@ -15,6 +14,8 @@ import org.asteriskjava.pbx.ChannelHangupListener;
 import org.asteriskjava.pbx.EndPoint;
 import org.asteriskjava.pbx.InvalidChannelName;
 import org.asteriskjava.pbx.agi.AgiChannelActivityHold;
+import org.asteriskjava.util.Log;
+import org.asteriskjava.util.LogFactory;
 
 /**
  * The ChannelProxy exists to deal with the fact that Asterisk will often
@@ -29,7 +30,7 @@ import org.asteriskjava.pbx.agi.AgiChannelActivityHold;
 public class ChannelProxy implements Channel, ChannelHangupListener
 {
 
-    private static final Logger logger = Logger.getLogger(ChannelProxy.class);
+    private static final Log logger = LogFactory.getLog(ChannelProxy.class);
 
     /**
      * We give each proxy a unique identity to help track them when debugging.
@@ -124,13 +125,17 @@ public class ChannelProxy implements Channel, ChannelHangupListener
     @Override
     public void addHangupListener(ChannelHangupListener listener)
     {
-        this.listeners.add(listener);
+        if (!listeners.contains(listener))
+        {
+            this.listeners.add(listener);
+        }
 
     }
 
     @Override
     public void removeListener(ChannelHangupListener listener)
     {
+
         this.listeners.remove(listener);
 
     }
@@ -184,9 +189,9 @@ public class ChannelProxy implements Channel, ChannelHangupListener
     }
 
     @Override
-    public void rename(String newName) throws InvalidChannelName
+    public void rename(String newName, String uniqueId) throws InvalidChannelName
     {
-        this._channel.rename(newName);
+        this._channel.rename(newName, uniqueId);
     }
 
     @Override
@@ -221,7 +226,7 @@ public class ChannelProxy implements Channel, ChannelHangupListener
         this._channel.addHangupListener(this);
         cloneProxy._channel.addHangupListener(cloneProxy);
 
-        logger.info(originalChannel + " Channel proxy now points to " + this._channel);
+        logger.debug(originalChannel + " Channel proxy now points to " + this._channel);
     }
 
     public ChannelImpl getRealChannel()
@@ -333,7 +338,7 @@ public class ChannelProxy implements Channel, ChannelHangupListener
     {
         AgiChannelActivityAction previousAction = currentActivityAction.get();
 
-        logger.info("Setting action to " + action.getClass().getSimpleName() + " for " + this);
+        logger.debug("Setting action to " + action.getClass().getSimpleName() + " for " + this);
 
         // Exception e = new Exception("Setting action to " +
         // action.getClass().getSimpleName() + " for " + this);
@@ -355,7 +360,7 @@ public class ChannelProxy implements Channel, ChannelHangupListener
             hasReachedAgi.countDown();
         }
         isInAgi = b;
-        logger.info("Setting is in agi to " + b + " for channel " + this);
+        logger.debug("Setting is in agi to " + b + " for channel " + this);
 
     }
 

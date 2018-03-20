@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
 import org.asteriskjava.manager.TimeoutException;
 import org.asteriskjava.pbx.ActivityCallback;
 import org.asteriskjava.pbx.AsteriskSettings;
@@ -23,6 +22,8 @@ import org.asteriskjava.pbx.asterisk.wrap.events.ManagerEvent;
 import org.asteriskjava.pbx.asterisk.wrap.events.ParkedCallEvent;
 import org.asteriskjava.pbx.asterisk.wrap.response.ManagerResponse;
 import org.asteriskjava.pbx.internal.core.AsteriskPBX;
+import org.asteriskjava.util.Log;
+import org.asteriskjava.util.LogFactory;
 
 /**
  * The ParkActivity is used by the AsteriksPBX implementation to park a channel.
@@ -36,7 +37,7 @@ import org.asteriskjava.pbx.internal.core.AsteriskPBX;
  */
 public class ParkActivityImpl extends ActivityHelper<ParkActivity> implements ParkActivity
 {
-    static Logger logger = Logger.getLogger(ParkActivityImpl.class);
+    private static final Log logger = LogFactory.getLog(ParkActivityImpl.class);
 
     /**
      * call - the call which is being packed.
@@ -60,21 +61,21 @@ public class ParkActivityImpl extends ActivityHelper<ParkActivity> implements Pa
      */
     public ParkActivityImpl(final Call call, final Channel parkChannel, final ActivityCallback<ParkActivity> listener)
     {
-        super("ParkActivity", listener); //$NON-NLS-1$
+        super("ParkActivity", listener);
 
         if (call == null)
         {
-            throw new IllegalArgumentException("call may not be null"); //$NON-NLS-1$
+            throw new IllegalArgumentException("call may not be null");
         }
         if (parkChannel == null)
         {
-            throw new IllegalArgumentException("parkChannel may not be null"); //$NON-NLS-1$
+            throw new IllegalArgumentException("parkChannel may not be null");
         }
         this._parkChannel = parkChannel;
         this._call = call;
 
         if (!this._call.contains(parkChannel))
-            throw new IllegalArgumentException("The parkChannel must be from the call."); //$NON-NLS-1$
+            throw new IllegalArgumentException("The parkChannel must be from the call.");
 
         this.startActivity(true);
     }
@@ -85,10 +86,10 @@ public class ParkActivityImpl extends ActivityHelper<ParkActivity> implements Pa
         boolean success = false;
         final AsteriskPBX pbx = (AsteriskPBX) PBXFactory.getActivePBX();
 
-        ParkActivityImpl.logger.info("*******************************************************************************"); //$NON-NLS-1$
-        ParkActivityImpl.logger.info("***********                    begin park               ****************"); //$NON-NLS-1$
-        ParkActivityImpl.logger.info("***********            " + this._parkChannel + "                 ****************"); //$NON-NLS-1$ //$NON-NLS-2$
-        ParkActivityImpl.logger.info("*******************************************************************************"); //$NON-NLS-1$
+        ParkActivityImpl.logger.debug("*******************************************************************************");
+        ParkActivityImpl.logger.info("***********                    begin park               ****************");
+        ParkActivityImpl.logger.info("***********            " + this._parkChannel + "                 ****************");
+        ParkActivityImpl.logger.debug("*******************************************************************************");
 
         try
         {
@@ -103,14 +104,20 @@ public class ParkActivityImpl extends ActivityHelper<ParkActivity> implements Pa
                     pbx.getExtensionPark(), 1);
 
             final ManagerResponse response = pbx.sendAction(redirect, 1000);
-            if ((response != null) && (response.getResponse().compareToIgnoreCase("success") == 0))//$NON-NLS-1$
+            if ((response != null) && (response.getResponse().compareToIgnoreCase("success") == 0))
             {
                 // Hangup the call as we have parked the other side of
                 // the call.
                 if (this._call.getDirection() == CallDirection.INBOUND)
+                {
+                    logger.warn("Hanging up");
                     pbx.hangup(this._call.getAcceptingParty());
+                }
                 else
+                {
+                    logger.warn("Hanging up");
                     pbx.hangup(this._call.getOriginatingParty());
+                }
                 success = true;
             }
 
@@ -135,8 +142,8 @@ public class ParkActivityImpl extends ActivityHelper<ParkActivity> implements Pa
                 if (this._parkingLot == null)
                 {
                     success = false;
-                    ParkActivityImpl.logger.warn("ParkCallEvent not recieved within 2 seconds of parking call."); //$NON-NLS-1$
-                    this.setLastException(new PBXException("ParkCallEvent  not recieved within 2 seconds of parking call.")); //$NON-NLS-1$
+                    ParkActivityImpl.logger.warn("ParkCallEvent not recieved within 2 seconds of parking call.");
+                    this.setLastException(new PBXException("ParkCallEvent  not recieved within 2 seconds of parking call."));
                 }
             }
             catch (final InterruptedException e)
@@ -168,7 +175,7 @@ public class ParkActivityImpl extends ActivityHelper<ParkActivity> implements Pa
     @Override
     synchronized public void onManagerEvent(final ManagerEvent event)
     {
-        assert event instanceof ParkedCallEvent : "Unexpected event"; //$NON-NLS-1$
+        assert event instanceof ParkedCallEvent : "Unexpected event";
 
         final ParkedCallEvent parkedEvent = (ParkedCallEvent) event;
         final AsteriskPBX pbx = (AsteriskPBX) PBXFactory.getActivePBX();

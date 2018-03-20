@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
 import org.asteriskjava.pbx.CallerID;
 import org.asteriskjava.pbx.Channel;
 import org.asteriskjava.pbx.EndPoint;
@@ -21,10 +20,12 @@ import org.asteriskjava.pbx.asterisk.wrap.events.LinkEvent;
 import org.asteriskjava.pbx.asterisk.wrap.events.ManagerEvent;
 import org.asteriskjava.pbx.asterisk.wrap.events.UnlinkEvent;
 import org.asteriskjava.pbx.internal.core.AsteriskPBX;
+import org.asteriskjava.util.Log;
+import org.asteriskjava.util.LogFactory;
 
 public class Dial extends EventListenerBaseClass
 {
-    private final static Logger logger = Logger.getLogger(Dial.class);
+    private static final Log logger = LogFactory.getLog(Dial.class);
 
     private final OriginateResult result[] = new OriginateResult[2];
 
@@ -32,8 +33,7 @@ public class Dial extends EventListenerBaseClass
 
     public Dial(final String descriptiveName)
     {
-        super(descriptiveName);
-        this.startListener(PBXFactory.getActivePBX());
+        super(descriptiveName, PBXFactory.getActivePBX());
     }
 
     /**
@@ -59,14 +59,16 @@ public class Dial extends EventListenerBaseClass
     {
         final PBX pbx = PBXFactory.getActivePBX();
 
-        try (final OriginateToExtension originate = new OriginateToExtension(listener);)
+        try (final OriginateToExtension originate = new OriginateToExtension(listener))
         {
+
+            this.startListener();
 
             // First bring the operator's handset up and connect it to the
             // 'njr-dial' extension where they can
             // wait whilst we complete the second leg
             final OriginateResult trcResult = originate.originate(localHandset, pbx.getExtensionAgi(), true,
-                    ((AsteriskPBX) pbx).getManagementContext(), callerID, hideCallerId, channelVarsToSet);
+                    ((AsteriskPBX) pbx).getManagementContext(), callerID, null, hideCallerId, channelVarsToSet);
 
             this.result[0] = trcResult;
             if (trcResult.isSuccess() == true)
@@ -109,6 +111,10 @@ public class Dial extends EventListenerBaseClass
             }
 
             return this.result;
+        }
+        finally
+        {
+            this.close();
         }
     }
 
