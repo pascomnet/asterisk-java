@@ -17,23 +17,23 @@ public class OutboundRegistrationDetailEvent extends ResponseEvent {
 
 	private String objectType;
 	private String objectName;
-	private int maxRetries;
+	private Integer maxRetries;
 	private String clientUri;
-	private boolean authRejectionPermanent;
+	private Boolean authRejectionPermanent;
 	private String serverUri;
-	private boolean supportPath;
-	private int retryInterval;
-	private int expiration;
+	private Boolean supportPath;
+	private Integer retryInterval;
+	private Integer expiration;
 	private String transport;
-	private boolean line;
+	private Boolean line;
 	private String contactUser;
 	private String endpoint;
-	private int forbiddenRetryInterval;
+	private Integer forbiddenRetryInterval;
 	private String outboundAuth;
 	private String outboundProxy;
-	private int fatalRetryInterval;
+	private Integer fatalRetryInterval;
 	private String status;
-	private int nextReg;
+	private Integer nextReg;
 
 	/**
 	 * @return
@@ -66,14 +66,14 @@ public class OutboundRegistrationDetailEvent extends ResponseEvent {
 	/**
 	 * @return
 	 */
-	public int getMaxRetries() {
+	public Integer getMaxRetries() {
 		return maxRetries;
 	}
 
 	/**
 	 * @param maxRetries
 	 */
-	public void setMaxRetries(int maxRetries) {
+	public void setMaxRetries(Integer maxRetries) {
 		this.maxRetries = maxRetries;
 	}
 
@@ -94,14 +94,14 @@ public class OutboundRegistrationDetailEvent extends ResponseEvent {
 	/**
 	 * @return
 	 */
-	public boolean isAuthRejectionPermanent() {
+	public Boolean isAuthRejectionPermanent() {
 		return authRejectionPermanent;
 	}
 
 	/**
 	 * @param authRejectionPermanent
 	 */
-	public void setAuthRejectionPermanent(boolean authRejectionPermanent) {
+	public void setAuthRejectionPermanent(Boolean authRejectionPermanent) {
 		this.authRejectionPermanent = authRejectionPermanent;
 	}
 
@@ -122,42 +122,42 @@ public class OutboundRegistrationDetailEvent extends ResponseEvent {
 	/**
 	 * @return
 	 */
-	public boolean isSupportPath() {
+	public Boolean isSupportPath() {
 		return supportPath;
 	}
 
 	/**
 	 * @param supportPath
 	 */
-	public void setSupportPath(boolean supportPath) {
+	public void setSupportPath(Boolean supportPath) {
 		this.supportPath = supportPath;
 	}
 
 	/**
 	 * @return
 	 */
-	public int getRetryInterval() {
+	public Integer getRetryInterval() {
 		return retryInterval;
 	}
 
 	/**
 	 * @param retryInterval
 	 */
-	public void setRetryInterval(int retryInterval) {
+	public void setRetryInterval(Integer retryInterval) {
 		this.retryInterval = retryInterval;
 	}
 
 	/**
 	 * @return
 	 */
-	public int getExpiration() {
+	public Integer getExpiration() {
 		return expiration;
 	}
 
 	/**
 	 * @param expiration
 	 */
-	public void setExpiration(int expiration) {
+	public void setExpiration(Integer expiration) {
 		this.expiration = expiration;
 	}
 
@@ -178,14 +178,14 @@ public class OutboundRegistrationDetailEvent extends ResponseEvent {
 	/**
 	 * @return
 	 */
-	public boolean isLine() {
+	public Boolean isLine() {
 		return line;
 	}
 
 	/**
 	 * @param line
 	 */
-	public void setLine(boolean line) {
+	public void setLine(Boolean line) {
 		this.line = line;
 	}
 
@@ -220,14 +220,14 @@ public class OutboundRegistrationDetailEvent extends ResponseEvent {
 	/**
 	 * @return
 	 */
-	public int getForbiddenRetryInterval() {
+	public Integer getForbiddenRetryInterval() {
 		return forbiddenRetryInterval;
 	}
 
 	/**
 	 * @param forbiddenRetryInterval
 	 */
-	public void setForbiddenRetryInterval(int forbiddenRetryInterval) {
+	public void setForbiddenRetryInterval(Integer forbiddenRetryInterval) {
 		this.forbiddenRetryInterval = forbiddenRetryInterval;
 	}
 
@@ -262,14 +262,14 @@ public class OutboundRegistrationDetailEvent extends ResponseEvent {
 	/**
 	 * @return
 	 */
-	public int getFatalRetryInterval() {
+	public Integer getFatalRetryInterval() {
 		return fatalRetryInterval;
 	}
 
 	/**
 	 * @param fatalRetryInterval
 	 */
-	public void setFatalRetryInterval(int fatalRetryInterval) {
+	public void setFatalRetryInterval(Integer fatalRetryInterval) {
 		this.fatalRetryInterval = fatalRetryInterval;
 	}
 
@@ -290,14 +290,14 @@ public class OutboundRegistrationDetailEvent extends ResponseEvent {
 	/**
 	 * @return
 	 */
-	public int getNextReg() {
+	public Integer getNextReg() {
 		return nextReg;
 	}
 
 	/**
 	 * @param nextReg
 	 */
-	public void setNextReg(int nextReg) {
+	public void setNextReg(Integer nextReg) {
 		this.nextReg = nextReg;
 	}
 }

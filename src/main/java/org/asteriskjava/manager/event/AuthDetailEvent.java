@@ -26,7 +26,7 @@ public class AuthDetailEvent extends ResponseEvent {
 	private String password;
 	private String md5Cred;
 	private String realm;
-	private long nonceLifetime;
+	private Long nonceLifetime;
 	private String authType;
 	private String endpointName;
 
@@ -131,7 +131,7 @@ public class AuthDetailEvent extends ResponseEvent {
 	 * Lifetime of a nonce associated with this authentication config
 	 * @return
 	 */
-	public long getNonceLifetime() {
+	public Long getNonceLifetime() {
 		return nonceLifetime;
 	}
 
@@ -139,7 +139,7 @@ public class AuthDetailEvent extends ResponseEvent {
 	 *
 	 * @param nonceLifetime
 	 */
-	public void setNonceLifetime(long nonceLifetime) {
+	public void setNonceLifetime(Long nonceLifetime) {
 		this.nonceLifetime = nonceLifetime;
 	}
 
