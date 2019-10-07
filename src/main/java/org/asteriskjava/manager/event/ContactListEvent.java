@@ -57,7 +57,7 @@ public class ContactListEvent extends ResponseEvent {
 	private String expirationTime;
 	private String outboundProxy;
 	private String status;
-	private Long roundtripUsec;
+	private String roundtripUsec;
 
 	/**
 	 * Creates a new instance.
@@ -309,16 +309,16 @@ public class ContactListEvent extends ResponseEvent {
 	}
 
 	/**
-	 * @return The round trip time in microseconds
+	 * @return The round trip time in microseconds or N/A
 	 */
-	public Long getRoundtripUsec() {
+	public String getRoundtripUsec() {
 		return roundtripUsec;
 	}
 
 	/**
 	 * @param roundtripUsec
 	 */
-	public void setRoundtripUsec(Long roundtripUsec) {
+	public void setRoundtripUsec(String roundtripUsec) {
 		this.roundtripUsec = roundtripUsec;
 	}
 }
