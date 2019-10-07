@@ -174,7 +174,7 @@ public abstract class ManagerEvent extends EventObject
 
     // AJ-213 only used when debugging is turned on
     private String file;
-    private Integer line;
+    private Integer codeLine;
     private String func;
     private Integer sequenceNumber;
 
@@ -306,7 +306,7 @@ public abstract class ManagerEvent extends EventObject
      * @return the name of the file in that triggered this event or
      *         <code>null</code> if debgging is turned off.
      * @see #getFunc()
-     * @see #getLine()
+     * @see #getCodeLine()
      * @since 1.0.0
      */
     public String getFile()
@@ -335,14 +335,14 @@ public abstract class ManagerEvent extends EventObject
      * @see #getFunc()
      * @since 1.0.0
      */
-    public Integer getLine()
+    public Integer getCodeLine()
     {
-        return line;
+        return codeLine;
     }
 
-    public void setLine(Integer line)
+    public void setCodeLine(Integer codeLine)
     {
-        this.line = line;
+        this.codeLine = codeLine;
     }
 
     /**
@@ -358,7 +358,7 @@ public abstract class ManagerEvent extends EventObject
      * @return the name of the C function that triggered this event or
      *         <code>null</code> if debgging is turned off.
      * @see #getFile()
-     * @see #getLine()
+     * @see #getCodeLine()
      * @since 1.0.0
      */
     public String getFunc()
@@ -384,7 +384,7 @@ public abstract class ManagerEvent extends EventObject
      * @return the sequence number of this event or <code>null</code> if
      *         debgging is turned off.
      * @see #getFile()
-     * @see #getLine()
+     * @see #getCodeLine()
      * @since 1.0.0
      */
     public Integer getSequenceNumber()
@@ -405,7 +405,7 @@ public abstract class ManagerEvent extends EventObject
         final StringBuilder sb = new StringBuilder(getClass().getName() + "[");
         appendPropertyIfNotNull(sb, "file", getFile());
         appendPropertyIfNotNull(sb, "func", getFunc());
-        appendPropertyIfNotNull(sb, "line", getLine());
+        appendPropertyIfNotNull(sb, "line", getCodeLine());
         appendPropertyIfNotNull(sb, "sequenceNumber", getSequenceNumber());
         appendPropertyIfNotNull(sb, "dateReceived", getDateReceived());
         appendPropertyIfNotNull(sb, "privilege", getPrivilege());

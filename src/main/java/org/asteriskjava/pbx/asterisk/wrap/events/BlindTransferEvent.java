@@ -154,9 +154,9 @@ public class BlindTransferEvent extends ManagerEvent
         return rawEvent.getFile();
     }
 
-    public Integer getLine()
+    public Integer getCodeLine()
     {
-        return rawEvent.getLine();
+        return rawEvent.getCodeLine();
     }
 
     public String getFunc()

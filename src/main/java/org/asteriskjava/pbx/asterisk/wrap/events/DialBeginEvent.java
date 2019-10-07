@@ -175,9 +175,9 @@ public class DialBeginEvent extends ChannelEventHelper
         return rawEvent.getDestUniqueId();
     }
 
-    public Integer getLine()
+    public Integer getCodeLine()
     {
-        return rawEvent.getLine();
+        return rawEvent.getCodeLine();
     }
 
     public String getDialString()
