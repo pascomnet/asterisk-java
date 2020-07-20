@@ -21,7 +21,7 @@ package org.asteriskjava.manager.event;
  * contains information about a member of a queue.
  * <p>
  * It is implemented in <code>apps/app_queue.c</code>
- * 
+ *
  * @see org.asteriskjava.manager.action.QueueStatusAction
  * @author srt
  * @version $Id$
@@ -56,11 +56,12 @@ public class QueueMemberEvent extends ResponseEvent
     private Integer penalty;
     private Integer callsTaken;
     private Long lastCall;
+    private Long lastPause;
     private Integer status;
     private Boolean paused;
-    private String stateinterface;
-    private Integer incall;
-    private String pausedreason;
+    private String stateInterface;
+    private Integer inCall;
+    private String pausedReason;
     private String _interface;
 
 
@@ -75,7 +76,7 @@ public class QueueMemberEvent extends ResponseEvent
 
     /**
      * Returns the name of the queue.
-     * 
+     *
      * @return the name of the queue.
      */
     public String getQueue()
@@ -85,7 +86,7 @@ public class QueueMemberEvent extends ResponseEvent
 
     /**
      * Sets the name of the queue.
-     * 
+     *
      * @param queue the name of the queue.
      */
     public void setQueue(String queue)
@@ -106,7 +107,7 @@ public class QueueMemberEvent extends ResponseEvent
 
     /**
      * Sets the name of the member's interface.
-     * 
+     *
      * @param member the name of the member's interface.
      */
     final public void setInterface(String _interface)
@@ -139,7 +140,7 @@ public class QueueMemberEvent extends ResponseEvent
     final public void setLocation(String _interface)
     {
         if ((_interface != null) && (!"null".equals(_interface)))
-        {  // Location is not in use since asterisk 12
+        { // Location is not in use since asterisk 12
             this._interface = _interface;
         }
     }
@@ -148,7 +149,7 @@ public class QueueMemberEvent extends ResponseEvent
      * Returns if this member has been dynamically added by the QueueAdd command
      * (in the dialplan or via the Manager API) or if this member is has been
      * statically defined in <code>queues.conf</code>.
-     * 
+     *
      * @return "dynamic" if the added member is a dynamic queue member, "static"
      *         if the added member is a static queue member.
      */
@@ -160,7 +161,7 @@ public class QueueMemberEvent extends ResponseEvent
     /**
      * Convenience method that checks whether this member has been statically
      * defined in <code>queues.conf</code>.
-     * 
+     *
      * @return <code>true</code> if this member has been statically defined in
      *         <code>queues.conf</code>, <code>false</code> otherwise.
      * @since 0.3
@@ -173,7 +174,7 @@ public class QueueMemberEvent extends ResponseEvent
     /**
      * Convenience method that checks whether this member has been dynamically
      * added by the QueueAdd command.
-     * 
+     *
      * @return <code>true</code> if this member has been dynamically added by
      *         the QueueAdd command, <code>false</code> otherwise.
      * @since 0.3
@@ -185,7 +186,7 @@ public class QueueMemberEvent extends ResponseEvent
 
     /**
      * Sets if this member has been dynamically or statically added.
-     * 
+     *
      * @param membership "dynamic" if the added member is a dynamic queue
      *            member, "static" if the added member is a static queue member.
      */
@@ -197,7 +198,7 @@ public class QueueMemberEvent extends ResponseEvent
     /**
      * Returns the penalty for the added member. When calls are distributed
      * members with higher penalties are considered last.
-     * 
+     *
      * @return the penalty for the added member.
      */
     public Integer getPenalty()
@@ -207,7 +208,7 @@ public class QueueMemberEvent extends ResponseEvent
 
     /**
      * Sets the penalty for this member.
-     * 
+     *
      * @param penalty the penalty for this member.
      */
     public void setPenalty(Integer penalty)
@@ -217,7 +218,7 @@ public class QueueMemberEvent extends ResponseEvent
 
     /**
      * Returns the number of calls answered by the member.
-     * 
+     *
      * @return the number of calls answered by the member.
      */
     public Integer getCallsTaken()
@@ -227,7 +228,7 @@ public class QueueMemberEvent extends ResponseEvent
 
     /**
      * Sets the number of calls answered by the added member.
-     * 
+     *
      * @param callsTaken the number of calls answered by the added member.
      */
     public void setCallsTaken(Integer callsTaken)
@@ -238,7 +239,7 @@ public class QueueMemberEvent extends ResponseEvent
     /**
      * Returns the time the last successful call answered by the added member
      * was hungup.
-     * 
+     *
      * @return the time (in seconds since 01/01/1970) the last successful call
      *         answered by the added member was hungup.
      */
@@ -250,13 +251,32 @@ public class QueueMemberEvent extends ResponseEvent
     /**
      * Sets the time the last successful call answered by this member was
      * hungup.
-     * 
+     *
      * @param lastCall the time (in seconds since 01/01/1970) the last
      *            successful call answered by the added member was hungup.
      */
     public void setLastCall(Long lastCall)
     {
         this.lastCall = lastCall;
+    }
+
+    /**
+     * The time when started last pause for queue member.
+     *
+     * @return the time (in seconds since 01/01/1970)
+     */
+    public Long getLastPause()
+    {
+        return lastPause;
+    }
+
+    /**
+     * Sets the time when started last pause for queue member.
+     * @param lastPause the time (in seconds since 01/01/1970)
+     */
+    public void setLastPause(Long lastPause)
+    {
+        this.lastPause = lastPause;
     }
 
     /**
@@ -286,7 +306,7 @@ public class QueueMemberEvent extends ResponseEvent
      * <dd>Device is on hold</dd>
 
      * </dl>
-     * 
+     *
      * @return the status of this queue member or <code>null</code> if this
      *         attribute is not supported by your version of Asterisk.
      * @since 0.2
@@ -298,7 +318,7 @@ public class QueueMemberEvent extends ResponseEvent
 
     /**
      * Sets the status of this queue member.
-     * 
+     *
      * @param status the status of this queue member
      * @since 0.2
      */
@@ -311,7 +331,7 @@ public class QueueMemberEvent extends ResponseEvent
      * Is this queue member paused (not accepting calls)?
      * <p>
      * Available since Asterisk 1.2.
-     * 
+     *
      * @return <code>Boolean.TRUE</code> if this member has been paused,
      *         <code>Boolean.FALSE</code> if not or <code>null</code> if
      *         pausing is not supported by your version of Asterisk.
@@ -324,7 +344,7 @@ public class QueueMemberEvent extends ResponseEvent
 
     /**
      * Sets if this member has been paused.
-     * 
+     *
      * @since 0.2
      */
     public void setPaused(Boolean paused)
@@ -368,39 +388,37 @@ public class QueueMemberEvent extends ResponseEvent
     /**
      * @return Name of the interface where device state is taken from.
      */
-    public String getStateinterface()
+    public String getStateInterface()
     {
-        return stateinterface;
+        return stateInterface;
     }
 
-    public void setStateinterface(String stateinterface)
+    public void setStateInterface(String stateInterface)
     {
-        this.stateinterface = stateinterface;
+        this.stateInterface = stateInterface;
     }
 
     /**
      * @return 1 if is incall 0 if not
      */
-    public Integer getIncall() 
+    public Integer getInCall()
     {
-        return incall;
+        return inCall;
     }
 
-    public void setIncall(Integer incall) 
+    public void setInCall(Integer inCall)
     {
-        this.incall = incall;
+        this.inCall = inCall;
     }
 
-
-    public String getPausedreason() 
+    public String getPausedReason()
     {
-        return pausedreason;
+        return pausedReason;
     }
 
-    public void setPausedreason(String pausedreason) 
+    public void setPausedReason(String pausedReason)
     {
-        this.pausedreason = pausedreason;
+        this.pausedReason = pausedReason;
     }
-
 
 }

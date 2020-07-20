@@ -6,14 +6,12 @@ public class QueueMemberPauseEvent extends QueueMemberPausedEvent
 
     // Logger logger = LogManager.getLogger();
     String membership;
-    Long lastcall;
+    Long lastCall;
     Integer callsTaken;
     Integer penalty;
     Integer status;
     Boolean ringinuse;
     String stateInterface;
-    Integer incall;
-    String pausedreason;
 
     public QueueMemberPauseEvent(Object source)
     {
@@ -40,17 +38,17 @@ public class QueueMemberPauseEvent extends QueueMemberPausedEvent
     /**
      * @return the lastcall
      */
-    public Long getLastcall()
+    public Long getLastCall()
     {
-        return lastcall;
+        return lastCall;
     }
 
     /**
-     * @param lastcall the lastcall to set
+     * @param lastCall the lastcall to set
      */
-    public void setLastcall(Long lastcall)
+    public void setLastCall(Long lastCall)
     {
-        this.lastcall = lastcall;
+        this.lastCall = lastCall;
     }
 
     /**
@@ -133,32 +131,5 @@ public class QueueMemberPauseEvent extends QueueMemberPausedEvent
     {
         this.stateInterface = stateInterface;
     }
-
-    /**
-     * @return get Incall
-     */
-    public Integer getIncall()
-    {
-        return incall;
-    }
-
-    /**
-     * @param setIncall the incall to set
-     */
-    public void setIncall(Integer incall)
-    {
-        this.incall = incall;
-    }
-
-    public String getPausedreason() 
-    {
-        return pausedreason;
-    }
-
-    public void setPausedreason(String pausedreason) 
-    {
-        this.pausedreason = pausedreason;
-    }
-
 
 }
