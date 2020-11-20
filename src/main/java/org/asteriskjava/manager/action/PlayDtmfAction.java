@@ -51,13 +51,27 @@ public class PlayDtmfAction extends AbstractManagerAction
      * @param channel the name of the channel to send the digit to.
      * @param digit the DTML digit to play.
      */
-    public PlayDtmfAction(String channel, String digit, Integer duration, Boolean receive)
+    public PlayDtmfAction(String channel, String digit)
     {
         this.channel = channel;
         this.digit = digit;
-        this.duration = duration;
-        this.receive = receive;
     }
+
+	/**
+	 * Creates a new PlayDtmfAction that sends the given DTMF digit to the given channel.
+	 *
+	 * @param channel the name of the channel to send the digit to.
+	 * @param digit the DTML digit to play.
+	 * @param duration the duration, in milliseconds, of the digit to be played
+	 * @param receive emulate receiving DTMF on this channel instead of sending it out
+	 */
+	public PlayDtmfAction(String channel, String digit, Integer duration, Boolean receive)
+	{
+		this.channel = channel;
+		this.digit = digit;
+		this.duration = duration;
+		this.receive = receive;
+	}
 
     /**
      * Returns the name of this action, i.e. "PlayDTMF".
